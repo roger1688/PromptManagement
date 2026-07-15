@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>提示詞高級管理系統 (Prompt Manager Pro) - V6 雲端同步版</title>
+    <style>
+        :root {
+            --primary-color: #2563eb; --primary-hover: #1d4ed8; --bg-color: #f8fafc;
+            --card-bg: #ffffff; --text-main: #1e293b; --text-muted: #64748b;
+            --border-color: #e2e8f0; --input-bg: #ffffff; --success-color: #10b981;
+            --warning-color: #f59e0b; --info-color: #0ea5e9; --danger-color: #ef4444;
+            --github-color: #24292f;
+            --tag-bg: #e0f2fe; --tag-text: #0369a1; --modal-overlay: rgba(0, 0, 0, 0.5);
+            --pin-active: #f59e0b; --pin-inactive: #cbd5e1;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #3b82f6; --primary-hover: #60a5fa; --bg-color: #0f172a;
+            --card-bg: #1e293b; --text-main: #f1f5f9; --text-muted: #94a3b8;
+            --border-color: #334155; --input-bg: #0f172a; --tag-bg: #1e3a8a; --tag-text: #bfdbfe; 
+            --github-color: #f0f6fc; --modal-overlay: rgba(0, 0, 0, 0.7);
+            --pin-active: #fbbf24; --pin-inactive: #475569;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
+        body { background-color: var(--bg-color); color: var(--text-main); line-height: 1.6; padding: 2rem; }
+
+        .top-bar { max-width: 1200px; margin: 0 auto 2rem auto; background: var(--card-bg); padding: 1.2rem 1.5rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border-color); }
+        .top-bar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem; }
+        .header-left { display: flex; align-items: center; gap: 1rem; }
+        .filter-title { font-size: 1rem; font-weight: 600; color: var(--text-main); }
+        .theme-toggle { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); padding: 0.4rem 0.8rem; border-radius: 20px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; width: auto; }
+        .theme-toggle:hover { background: var(--border-color); }
+        
+        .header-right { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+        .sort-select { padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 20px; font-size: 0.95rem; outline: none; background-color: var(--input-bg); color: var(--text-main); cursor: pointer; }
+        .search-input { padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 20px; width: 250px; font-size: 0.95rem; outline: none; background-color: var(--input-bg); color: var(--text-main); }
+        .search-input:focus, .sort-select:focus { border-color: var(--primary-color); }
+
+        .filter-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .filter-btn { background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color); padding: 0.4rem 1rem; border-radius: 20px; cursor: pointer; font-size: 0.9rem; width: auto; }
+        .filter-btn:hover { border-color: var(--primary-color); }
+        .filter-btn.active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+
+        .global-websites-wrapper { margin-top: 1.2rem; padding-top: 1rem; border-top: 1px dashed var(--border-color); display: none; }
+        .global-websites-title { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.6rem; }
+        .btn-global-site { background-color: var(--tag-bg); color: var(--info-color); border: 1px solid var(--info-color); padding: 0.3rem 0.8rem; border-radius: 20px; text-decoration: none; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; }
+
+        .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 350px 1fr; gap: 2rem; }
+        .sidebar { display: flex; flex-direction: column; gap: 1.5rem; height: fit-content; position: sticky; top: 2rem; }
+        .sidebar-section { background: var(--card-bg); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border-color); }
+        .sidebar-section h2 { margin-bottom: 1.2rem; font-size: 1.1rem; border-left: 4px solid var(--primary-color); padding-left: 8px; }
+
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.4rem; font-weight: 600; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: flex-end;}
+        .optional-text { font-size: 0.75rem; color: var(--text-muted); font-weight: normal; }
+        input[type="text"], input[type="password"], textarea, select { width: 100%; padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.95rem; background-color: var(--input-bg); color: var(--text-main); }
+        input:focus, textarea:focus { outline: none; border-color: var(--primary-color); }
+        textarea { resize: vertical; min-height: 120px; }
+
+        button { border: none; padding: 0.6rem 1.2rem; border-radius: 4px; cursor: pointer; font-size: 0.95rem; width: 100%; font-weight: 600; transition: background-color 0.2s, opacity 0.2s; }
+        button:hover { opacity: 0.9; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .form-actions { display: flex; gap: 0.5rem; flex-direction: column; }
+        .btn-submit { background-color: var(--primary-color); color: white; }
+        .btn-cancel { background-color: var(--border-color); color: var(--text-main); display: none; }
+        
+        .btn-github { background-color: var(--github-color); color: var(--card-bg); }
+        [data-theme="dark"] .btn-github { color: #000000; }
+
+        .shortcut-edit-list { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; max-height: 150px; overflow-y: auto; padding-right: 5px; }
+        .shortcut-item { display: flex; justify-content: space-between; align-items: center; background: var(--bg-color); padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border-color); }
+        .shortcut-item-info { display: flex; flex-direction: column; overflow: hidden; }
+        .shortcut-item-name { font-size: 0.85rem; font-weight: 600; }
+        .shortcut-item-actions { display: flex; gap: 0.3rem; flex-shrink: 0; }
+        .btn-mini-edit { background-color: var(--warning-color); color: white; padding: 0.2rem 0.5rem; width: auto; font-size: 0.75rem; }
+        .btn-mini-delete { background-color: var(--danger-color); color: white; padding: 0.2rem 0.5rem; width: auto; font-size: 0.75rem; }
+
+        .list-section { display: grid; grid-template-columns: 1fr; gap: 1.5rem; height: fit-content; }
+        .prompt-card { background: var(--card-bg); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border-color); position: relative; transition: all 0.2s; }
+        .prompt-card.pinned { border-left: 5px solid var(--warning-color); }
+        
+        .prompt-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; gap: 1rem; }
+        .prompt-title-area { display: flex; flex-direction: column; gap: 0.5rem; width: 100%; padding-right: 70px; }
+        .prompt-title-area h3 { font-size: 1.2rem; word-break: break-all; }
+        
+        .tags-container { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+        .category-badge { background-color: var(--tag-bg); color: var(--tag-text); padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; width: fit-content; }
+        
+        .card-stats { display: flex; align-items: center; gap: 0.8rem; position: absolute; top: 1.5rem; right: 1.5rem; }
+        .usage-badge { font-size: 0.8rem; color: var(--warning-color); font-weight: 600; display: flex; align-items: center; gap: 0.2rem; background: var(--bg-color); padding: 0.2rem 0.5rem; border-radius: 12px; border: 1px solid var(--border-color); }
+        .btn-pin { background: transparent; border: none; font-size: 1.2rem; cursor: pointer; padding: 0; width: auto; transition: transform 0.2s, filter 0.2s, opacity 0.2s; }
+        .btn-pin { opacity: 0.25; filter: grayscale(100%); } 
+        .btn-pin:hover { transform: scale(1.1); opacity: 0.6; }
+        .btn-pin.active { opacity: 1; filter: grayscale(0%); }
+
+        .prompt-content { background: var(--input-bg); padding: 1rem; border-radius: 4px; font-family: 'Courier New', Courier, monospace; white-space: pre-wrap; margin-bottom: 1rem; border: 1px solid var(--border-color); font-size: 0.95rem; line-height: 1.6; max-height: calc(1.6em * 10 + 2rem); overflow-y: auto; color: var(--text-main); }
+        .prompt-content::-webkit-scrollbar { width: 8px; }
+        .prompt-content::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 10px; }
+
+        .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .btn-action { padding: 0.5rem 1.2rem; width: auto; font-size: 0.9rem; border-radius: 4px; }
+        .btn-copy { background-color: var(--success-color); color: white; }
+        .btn-edit { background-color: var(--warning-color); color: white; }
+        .btn-delete { background-color: var(--danger-color); color: white; margin-left: auto; }
+        .no-result { text-align: center; color: var(--text-muted); padding: 3rem; background: var(--card-bg); border-radius: 8px; border: 1px dashed var(--border-color); }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--modal-overlay); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-content { background: var(--card-bg); width: 90%; max-width: 450px; padding: 2rem; border-radius: 8px; border: 1px solid var(--border-color); transform: translateY(20px); transition: transform 0.2s; }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+        .modal-title { font-size: 1.2rem; margin-bottom: 0.5rem; color: var(--text-main); }
+        .modal-desc { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem; }
+        .var-inputs-container { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; max-height: 40vh; overflow-y: auto; padding-right: 5px; }
+        .modal-actions { display: flex; gap: 0.5rem; }
+        .btn-modal-copy { background-color: var(--primary-color); color: white; flex: 2; }
+        .btn-modal-raw { background-color: var(--success-color); color: white; flex: 1; }
+        .btn-modal-cancel { background-color: var(--border-color); color: var(--text-main); flex: 1; }
+
+        @media (max-width: 900px) {
+            .container { grid-template-columns: 1fr; }
+            .sidebar { position: static; }
+            .header-right { width: 100%; }
+            .search-input { width: 100%; }
+            .sort-select { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div class="top-bar-header">
+            <div class="header-left">
+                <div class="filter-title">提示詞庫篩選</div>
+                <button class="theme-toggle" id="themeToggleBtn">🌓 切換主題</button>
+            </div>
+            <div class="header-right">
+                <select id="sortSelect" class="sort-select">
+                    <option value="newest">🕒 依最新發布</option>
+                    <option value="popular">🔥 依最常使用</option>
+                </select>
+                <input type="text" id="searchInput" class="search-input" placeholder="🔍 搜尋標題或內容關鍵字...">
+            </div>
+        </div>
+        <div class="filter-tags" id="filterTagsContainer"></div>
+        <div id="globalWebsitesWrapper" class="global-websites-wrapper">
+            <div class="global-websites-title">🌐 常用網站快捷：</div>
+            <div class="filter-tags" id="globalWebsitesContainer"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <h2 id="formTitle">新增提示詞</h2>
+                <form id="promptForm">
+                    <div class="form-group">
+                        <label for="title">標題</label>
+                        <input type="text" id="title" placeholder="例如：文案潤飾" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="tags">
+                            標籤 (Tags)
+                            <span class="optional-text">用逗號分隔多個標籤</span>
+                        </label>
+                        <input type="text" id="tags" placeholder="例如：寫作, SEO" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="content">提示詞內容</label>
+                        <textarea id="content" placeholder="請將以下文本翻譯成 [目標語言]：\n\n[輸入文本]" required></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-submit" id="submitBtn">保存提示詞</button>
+                        <button type="button" class="btn-cancel" id="cancelBtn">取消編輯</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="sidebar-section">
+                <h2 id="shortcutFormTitle">常用網站管理</h2>
+                <form id="shortcutForm">
+                    <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 0.5rem;">
+                        <input type="text" id="shortcutName" placeholder="名稱 (如 ChatGPT)" required>
+                        <input type="text" id="shortcutUrl" placeholder="網址 (如 chatgpt.com)" required>
+                    </div>
+                    <div class="form-actions" style="margin-top: 1rem;">
+                        <button type="submit" class="btn-submit" id="scSubmitBtn" style="background-color: var(--info-color);">新增捷徑</button>
+                        <button type="button" class="btn-cancel" id="scCancelBtn">取消編輯</button>
+                    </div>
+                </form>
+                <div id="shortcutEditList" class="shortcut-edit-list"></div>
+            </div>
+
+            <div class="sidebar-section">
+                <h2>☁️ GitHub 雲端同步</h2>
+                <div class="form-group">
+                    <label for="githubToken">
+                        GitHub Token
+                        <a href="https://github.com/settings/tokens/new?description=PromptManager&scopes=gist" target="_blank" class="optional-text" style="color: var(--info-color); text-decoration: none;">點此取得 Token (需勾選 gist)</a>
+                    </label>
+                    <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxxxxxxx">
+                </div>
+                <div class="form-group">
+                    <label for="gistId">
+                        Gist ID
+                        <span class="optional-text">(首次上傳會自動產生)</span>
+                    </label>
+                    <input type="text" id="gistId" placeholder="輸入 Gist ID 以同步其他電腦的資料">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-github" id="btnSyncUp">⬆️ 備份上傳至雲端</button>
+                    <button type="button" style="background-color: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color); display: block;" id="btnSyncDown">⬇️ 從雲端拉取覆蓋</button>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h2>📁 本地資料備份</h2>
+                <div class="form-actions">
+                    <button type="button" style="background-color: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color);" id="exportBtn">匯出 JSON 檔案</button>
+                    <button type="button" style="background-color: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color);" id="importTriggerBtn">匯入 JSON 檔案</button>
+                    <input type="file" id="importInput" accept=".json" style="display: none;">
+                </div>
+            </div>
+        </aside>
+
+        <main class="list-section" id="promptList"></main>
+    </div>
+
+    <div class="modal-overlay" id="varModal">
+        <div class="modal-content">
+            <h3 class="modal-title">✨ 填寫變數</h3>
+            <p class="modal-desc">系統偵測到變數，請填寫後再組裝複製：</p>
+            <div class="var-inputs-container" id="varInputsContainer"></div>
+            <div class="modal-actions">
+                <button class="btn-modal-copy" id="btnModalCopy">組裝並複製</button>
+                <button class="btn-modal-raw" id="btnModalRaw">複製原文本</button>
+                <button class="btn-modal-cancel" id="btnModalCancel">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 深淺色模式
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const htmlElement = document.documentElement;
+        let currentTheme = localStorage.getItem('theme') || 'light';
+        htmlElement.setAttribute('data-theme', currentTheme);
+        themeToggleBtn.addEventListener('click', () => {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            htmlElement.setAttribute('data-theme', currentTheme);
+            localStorage.setItem('theme', currentTheme);
+        });
+
+        // 資料初始化與修復
+        let rawPrompts = JSON.parse(localStorage.getItem('promptsDataWithCat')) || [];
+        let prompts = rawPrompts.map(p => {
+            if (p.category) { p.tags = [p.category]; delete p.category; }
+            if (!Array.isArray(p.tags)) p.tags = ['未分類'];
+            if (p.usageCount === undefined || isNaN(p.usageCount)) p.usageCount = 0;
+            if (p.isPinned === undefined) p.isPinned = false;
+            if (!p.createdAt) p.createdAt = new Date().toISOString(); 
+            return p;
+        });
+        localStorage.setItem('promptsDataWithCat', JSON.stringify(prompts));
+        let shortcuts = JSON.parse(localStorage.getItem('shortcutsData')) || [];
+        
+        let activeTags = []; 
+        let searchQuery = ''; 
+        let currentSort = 'newest'; 
+        let editingPromptId = null; 
+        let editingShortcutId = null;
+
+        // DOM 選取 (Prompts)
+        const promptForm = document.getElementById('promptForm');
+        const tagsInput = document.getElementById('tags');
+        const titleInput = document.getElementById('title');
+        const contentInput = document.getElementById('content');
+        const listContainer = document.getElementById('promptList');
+        const filterContainer = document.getElementById('filterTagsContainer');
+        const searchInput = document.getElementById('searchInput'); 
+        const sortSelect = document.getElementById('sortSelect');
+        const varModal = document.getElementById('varModal');
+        const varInputsContainer = document.getElementById('varInputsContainer');
+        
+        let pendingCopyId = null;
+        let pendingCopyContent = '';
+        let pendingCopyBtnElem = null;
+
+        searchInput.addEventListener('input', e => { searchQuery = e.target.value.toLowerCase().trim(); renderPrompts(); });
+        sortSelect.addEventListener('change', e => { currentSort = e.target.value; renderPrompts(); });
+
+        function renderFilterButtons() {
+            filterContainer.innerHTML = '';
+            const allTags = new Set();
+            prompts.forEach(p => p.tags.forEach(t => allTags.add(t)));
+            
+            const btnAll = document.createElement('button');
+            btnAll.className = `filter-btn ${activeTags.length === 0 ? 'active' : ''}`;
+            btnAll.textContent = '全部顯示';
+            btnAll.onclick = () => { activeTags = []; renderFilterButtons(); renderPrompts(); };
+            filterContainer.appendChild(btnAll);
+
+            [...allTags].forEach(tag => {
+                const btn = document.createElement('button');
+                const isActive = activeTags.includes(tag);
+                btn.className = `filter-btn ${isActive ? 'active' : ''}`;
+                btn.textContent = tag;
+                btn.onclick = () => {
+                    if (isActive) activeTags = activeTags.filter(t => t !== tag);
+                    else activeTags.push(tag);
+                    renderFilterButtons();
+                    renderPrompts();
+                };
+                filterContainer.appendChild(btn);
+            });
+        }
+
+        function renderPrompts() {
+            listContainer.innerHTML = '';
+            let filteredPrompts = prompts;
+            if (activeTags.length > 0) {
+                filteredPrompts = filteredPrompts.filter(p => activeTags.every(activeTag => p.tags.includes(activeTag)));
+            }
+            if (searchQuery) {
+                filteredPrompts = filteredPrompts.filter(p => p.title.toLowerCase().includes(searchQuery) || p.content.toLowerCase().includes(searchQuery) || p.tags.some(t => t.toLowerCase().includes(searchQuery)));
+            }
+
+            if (filteredPrompts.length === 0) {
+                listContainer.innerHTML = `<div class="no-result">沒有符合條件的提示詞。</div>`;
+                return;
+            }
+
+            const sortedPrompts = [...filteredPrompts].sort((a, b) => {
+                if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
+                if (currentSort === 'popular') return (b.usageCount || 0) - (a.usageCount || 0);
+                else return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            });
+
+            sortedPrompts.forEach(prompt => {
+                const card = document.createElement('div');
+                const pinnedClass = prompt.isPinned ? 'pinned' : '';
+                card.className = `prompt-card ${pinnedClass}`;
+                if (editingPromptId === prompt.id) card.style.borderColor = 'var(--warning-color)';
+
+                const tagsHtml = prompt.tags.map(t => `<span class="category-badge">${t}</span>`).join('');
+                const safeContent = prompt.content.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, '\\n');
+                const pinActive = prompt.isPinned ? 'active' : '';
+
+                card.innerHTML = `
+                    <div class="card-stats">
+                        <span class="usage-badge" title="使用次數">🔥 ${prompt.usageCount}</span>
+                        <button class="btn-pin ${pinActive}" onclick="togglePin('${prompt.id}')" title="置頂/取消置頂">📌</button>
+                    </div>
+                    <div class="prompt-header">
+                        <div class="prompt-title-area">
+                            <h3>${prompt.title}</h3>
+                            <div class="tags-container">${tagsHtml}</div>
+                        </div>
+                    </div>
+                    <div class="prompt-content">${prompt.content}</div>
+                    <div class="actions">
+                        <button class="btn-action btn-copy" onclick="handleCopyReq('${prompt.id}', '${safeContent}', this)">複製</button>
+                        <button class="btn-action btn-edit" onclick="triggerEditPrompt('${prompt.id}')">編輯</button>
+                        <button class="btn-action btn-delete" onclick="deletePrompt('${prompt.id}')">刪除</button>
+                    </div>
+                `;
+                listContainer.appendChild(card);
+            });
+        }
+
+        window.togglePin = function(id) {
+            const prompt = prompts.find(p => p.id === id);
+            if (prompt) { prompt.isPinned = !prompt.isPinned; saveData(); renderPrompts(); }
+        };
+
+        promptForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const rawTags = tagsInput.value.replace(/，/g, ',').split(',').map(t => t.trim()).filter(t => t);
+            const finalTags = rawTags.length > 0 ? rawTags : ['未分類'];
+
+            if (editingPromptId) {
+                const index = prompts.findIndex(p => p.id === editingPromptId);
+                if (index !== -1) {
+                    prompts[index].title = titleInput.value.trim();
+                    prompts[index].tags = finalTags;
+                    prompts[index].content = contentInput.value.trim();
+                }
+                exitEditPrompt(); 
+            } else {
+                prompts.push({ id: 'p_' + Date.now(), title: titleInput.value.trim(), tags: finalTags, content: contentInput.value.trim(), createdAt: new Date().toISOString(), usageCount: 0, isPinned: false });
+                promptForm.reset();
+            }
+            saveData(); refreshUI();
+        });
+
+        window.triggerEditPrompt = function(id) {
+            const prompt = prompts.find(p => p.id === id);
+            if (!prompt) return;
+            editingPromptId = prompt.id;
+            titleInput.value = prompt.title; tagsInput.value = prompt.tags.join(', '); contentInput.value = prompt.content;
+            document.getElementById('formTitle').textContent = '編輯提示詞';
+            document.getElementById('submitBtn').textContent = '更新提示詞';
+            document.getElementById('submitBtn').style.backgroundColor = 'var(--warning-color)';
+            document.getElementById('cancelBtn').style.display = 'block';
+            renderPrompts(); window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function exitEditPrompt() {
+            editingPromptId = null; promptForm.reset();
+            document.getElementById('formTitle').textContent = '新增提示詞';
+            document.getElementById('submitBtn').textContent = '保存提示詞';
+            document.getElementById('submitBtn').style.backgroundColor = 'var(--primary-color)';
+            document.getElementById('cancelBtn').style.display = 'none';
+            renderPrompts();
+        }
+        document.getElementById('cancelBtn').addEventListener('click', exitEditPrompt);
+
+        window.deletePrompt = function(id) {
+            if (confirm('確定要刪除嗎？')) {
+                if (editingPromptId === id) exitEditPrompt();
+                prompts = prompts.filter(p => p.id !== id);
+                saveData(); refreshUI();
+            }
+        }
+
+        // 動態變數複製
+        window.handleCopyReq = function(id, content, btnElement) {
+            const regex = /\[([^\]]+)\]/g; 
+            const matches = [...content.matchAll(regex)];
+            const detectedVars = [...new Set(matches.map(m => m[1]))];
+            pendingCopyId = id; pendingCopyContent = content; pendingCopyBtnElem = btnElement;
+            if (detectedVars.length > 0) openVarModal(detectedVars);
+            else executeDirectCopy(content, btnElement, id);
+        }
+
+        function openVarModal(vars) {
+            varInputsContainer.innerHTML = '';
+            vars.forEach(v => {
+                const group = document.createElement('div'); group.className = 'form-group';
+                group.innerHTML = `<label>${v}</label><input type="text" data-var="${v}" placeholder="請輸入 ${v}..." class="var-input-field">`;
+                varInputsContainer.appendChild(group);
+            });
+            varModal.classList.add('active');
+            setTimeout(() => { const firstInput = document.querySelector('.var-input-field'); if (firstInput) firstInput.focus(); }, 100);
+        }
+
+        function closeVarModal() { varModal.classList.remove('active'); pendingCopyId = null; pendingCopyContent = ''; pendingCopyBtnElem = null; }
+        document.getElementById('btnModalCancel').addEventListener('click', closeVarModal);
+        document.getElementById('btnModalRaw').addEventListener('click', () => { executeDirectCopy(pendingCopyContent, pendingCopyBtnElem, pendingCopyId); closeVarModal(); });
+        document.getElementById('btnModalCopy').addEventListener('click', () => {
+            let finalContent = pendingCopyContent;
+            document.querySelectorAll('.var-input-field').forEach(input => {
+                const varName = input.getAttribute('data-var'); const userValue = input.value.trim() || `[${varName}]`; 
+                finalContent = finalContent.replace(new RegExp(`\\[${varName}\\]`, 'g'), userValue);
+            });
+            executeDirectCopy(finalContent, pendingCopyBtnElem, pendingCopyId); closeVarModal();
+        });
+
+        async function executeDirectCopy(text, btnElement, id) {
+            try {
+                const decodedText = text.replace(/\\n/g, '\n'); await navigator.clipboard.writeText(decodedText);
+                const promptIndex = prompts.findIndex(p => p.id === id);
+                if (promptIndex !== -1) { prompts[promptIndex].usageCount = (prompts[promptIndex].usageCount || 0) + 1; saveData(); renderPrompts(); }
+                const originalText = btnElement.textContent;
+                btnElement.textContent = '已複製'; btnElement.style.backgroundColor = '#059669';
+                setTimeout(() => { btnElement.textContent = originalText; btnElement.style.backgroundColor = ''; }, 1500);
+            } catch (err) { alert('複製失敗。'); }
+        }
+
+        // 快捷管理
+        const shortcutForm = document.getElementById('shortcutForm');
+        const globalWebsitesWrapper = document.getElementById('globalWebsitesWrapper');
+        const globalWebsitesContainer = document.getElementById('globalWebsitesContainer');
+        function renderShortcutsUI() {
+            if (shortcuts.length === 0) { globalWebsitesWrapper.style.display = 'none'; } 
+            else {
+                globalWebsitesWrapper.style.display = 'block'; globalWebsitesContainer.innerHTML = '';
+                shortcuts.forEach(sc => {
+                    let fUrl = sc.url.trim(); if (!fUrl.startsWith('http')) fUrl = 'https://' + fUrl;
+                    const a = document.createElement('a'); a.className = 'btn-global-site'; a.href = fUrl; a.target = '_blank'; a.textContent = sc.name;
+                    globalWebsitesContainer.appendChild(a);
+                });
+            }
+            document.getElementById('shortcutEditList').innerHTML = '';
+            shortcuts.forEach(sc => {
+                const item = document.createElement('div'); item.className = 'shortcut-item';
+                item.innerHTML = `<div class="shortcut-item-info"><span class="shortcut-item-name">${sc.name}</span></div><div class="shortcut-item-actions"><button type="button" class="btn-mini-delete" onclick="deleteShortcut('${sc.id}')">❌</button></div>`;
+                document.getElementById('shortcutEditList').appendChild(item);
+            });
+        }
+        shortcutForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            shortcuts.push({ id: 'sc_' + Date.now(), name: document.getElementById('shortcutName').value.trim(), url: document.getElementById('shortcutUrl').value.trim() });
+            shortcutForm.reset(); saveData(); renderShortcutsUI();
+        });
+        window.deleteShortcut = function(id) { if (confirm('確定刪除？')) { shortcuts = shortcuts.filter(s => s.id !== id); saveData(); renderShortcutsUI(); } };
+
+        // --- ☁️ 雲端同步 (GitHub Gist API) ---
+        const githubTokenInput = document.getElementById('githubToken');
+        const gistIdInput = document.getElementById('gistId');
+        const btnSyncUp = document.getElementById('btnSyncUp');
+        const btnSyncDown = document.getElementById('btnSyncDown');
+
+        // 讀取本地保存的 Token 和 GistID
+        githubTokenInput.value = localStorage.getItem('githubToken') || '';
+        gistIdInput.value = localStorage.getItem('gistId') || '';
+
+        // 監聽並自動保存 Token 和 GistID
+        githubTokenInput.addEventListener('input', e => localStorage.setItem('githubToken', e.target.value.trim()));
+        gistIdInput.addEventListener('input', e => localStorage.setItem('gistId', e.target.value.trim()));
+
+        // 上傳至雲端
+        btnSyncUp.addEventListener('click', async () => {
+            const token = githubTokenInput.value.trim();
+            let gistId = gistIdInput.value.trim();
+            if (!token) return alert('請先輸入 GitHub Token！');
+
+            const payload = { version: 6.0, prompts, shortcuts };
+            const gistData = {
+                description: "Prompt Manager Pro Cloud Backup",
+                public: false, // 設為私有
+                files: { "prompt_manager_backup.json": { content: JSON.stringify(payload, null, 2) } }
+            };
+
+            const origText = btnSyncUp.textContent;
+            btnSyncUp.textContent = '⏳ 上傳中...';
+            btnSyncUp.disabled = true;
+
+            try {
+                let url = 'https://api.github.com/gists';
+                let method = 'POST';
+                // 如果已經有 gist ID，改為 PATCH 更新
+                if (gistId) {
+                    url = `https://api.github.com/gists/${gistId}`;
+                    method = 'PATCH';
+                }
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' },
+                    body: JSON.stringify(gistData)
+                });
+
+                if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+                const data = await response.json();
+
+                // 如果是首次創建，把產生的 Gist ID 寫入欄位並保存
+                if (!gistId) {
+                    gistIdInput.value = data.id;
+                    localStorage.setItem('gistId', data.id);
+                }
+
+                alert('✅ 雲端備份成功！');
+            } catch (err) {
+                alert('上傳失敗，請檢查 Token 權限或 Gist ID 是否正確。\n錯誤訊息: ' + err.message);
+            } finally {
+                btnSyncUp.textContent = origText;
+                btnSyncUp.disabled = false;
+            }
+        });
+
+        // 從雲端下載
+        btnSyncDown.addEventListener('click', async () => {
+            const token = githubTokenInput.value.trim();
+            const gistId = gistIdInput.value.trim();
+            if (!token || !gistId) return alert('請確認已輸入 GitHub Token 與 Gist ID！');
+
+            const origText = btnSyncDown.textContent;
+            btnSyncDown.textContent = '⏳ 下載中...';
+            btnSyncDown.disabled = true;
+
+            try {
+                const response = await fetch(`https://api.github.com/gists/${gistId}`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+
+                if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+                const data = await response.json();
+                
+                const file = data.files["prompt_manager_backup.json"];
+                if (!file) throw new Error('雲端找不到名為 prompt_manager_backup.json 的備份檔');
+
+                const importedData = JSON.parse(file.content);
+                processImportData(importedData);
+                
+                alert('✅ 雲端還原成功！');
+            } catch (err) {
+                alert('下載失敗，請檢查 Gist ID 是否正確或 Token 是否過期。\n錯誤訊息: ' + err.message);
+            } finally {
+                btnSyncDown.textContent = origText;
+                btnSyncDown.disabled = false;
+            }
+        });
+
+        // --- 本地資料備份 (JSON 匯出匯入) ---
+        document.getElementById('exportBtn').addEventListener('click', function() {
+            const dataStr = JSON.stringify({ version: 6.0, prompts, shortcuts }, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const downloadLink = document.createElement('a'); downloadLink.href = url; downloadLink.download = `prompt_manager_v6.json`;
+            document.body.appendChild(downloadLink); downloadLink.click(); document.body.removeChild(downloadLink); URL.revokeObjectURL(url);
+        });
+
+        document.getElementById('importTriggerBtn').addEventListener('click', () => document.getElementById('importInput').click());
+        document.getElementById('importInput').addEventListener('change', function(e) {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const importedData = JSON.parse(event.target.result);
+                    processImportData(importedData);
+                } catch (err) { alert('匯入失敗，格式錯誤'); } finally { document.getElementById('importInput').value = ''; }
+            }; reader.readAsText(file);
+        });
+
+        // 獨立出的匯入/還原合併邏輯，供本地與雲端共同使用
+        function processImportData(importedData) {
+            let newPrompts = Array.isArray(importedData) ? importedData : (importedData.prompts || []);
+            newPrompts = newPrompts.map(p => { 
+                if (p.category) { p.tags = [p.category]; delete p.category; } 
+                if (!p.tags) p.tags = ['未分類']; 
+                if (!p.usageCount) p.usageCount = 0;
+                if (p.isPinned === undefined) p.isPinned = false;
+                if (!p.createdAt) p.createdAt = new Date().toISOString();
+                return p; 
+            });
+            const mode = confirm('【確定】: 覆蓋現有資料 (清空目前所有提示詞)\n【取消】: 合併新舊資料 (保留現有，並加入雲端的新資料)');
+            if (mode) { prompts = newPrompts; shortcuts = importedData.shortcuts || []; }
+            else {
+                newPrompts.forEach(item => { if (!prompts.some(p => p.content === item.content)) prompts.push(item); });
+                (importedData.shortcuts || []).forEach(sc => { if (!shortcuts.some(s => s.url === sc.url)) shortcuts.push(sc); });
+            }
+            saveData(); activeTags = []; currentSort = 'newest'; refreshUI();
+        }
+
+        function saveData() { localStorage.setItem('promptsDataWithCat', JSON.stringify(prompts)); localStorage.setItem('shortcutsData', JSON.stringify(shortcuts)); }
+        function refreshUI() { renderFilterButtons(); renderShortcutsUI(); renderPrompts(); }
+
+        refreshUI();
+    </script>
+</body>
+</html>
